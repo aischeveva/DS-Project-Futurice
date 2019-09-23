@@ -11,6 +11,12 @@ from pathvalidate import sanitize_filename
 # the starting of the next three lines, and define the start_year that immediately follows the ending year of the
 # previous chunk.
 def download_index(start_year, current_year):
+    '''
+    Download index files from Edgar
+    :param start_year:
+    :param current_year:
+    :return:
+    '''
     current_quarter = 4  # do not change this line
 
     # start_year = 2016     # only change this line to download the most recent chunk
@@ -18,7 +24,6 @@ def download_index(start_year, current_year):
     # current_quarter = (datetime.date.today().month - 1) // 3 + 1
 
     years = list(range(start_year, current_year))
-    quarters = ['QTR1', 'QTR2', 'QTR3', 'QTR4']
     for current_year in years:
         print(current_year)
         if str(current_year) not in os.listdir('index'):
@@ -31,6 +36,10 @@ def download_index(start_year, current_year):
 
 
 def clean_index():
+    '''
+    Clean index files from the meta-data
+    :return:
+    '''
     years = os.listdir('index')
     for year in years:
         print(year)
@@ -49,31 +58,55 @@ def clean_index():
                 f.write(text)
 
 
-def get_links(filename):
+def get_links(filename, company_name=''):
+    # Read the index file into dataframe
     df = pd.read_csv(filename, sep='|')
+    # If company name specified, filter company
+    if company_name != '':
+        df = df[df["Company Name"] == company_name]
+    # Return annual reports
+    print(df)
     return df[df['Form Type'] == '10-K']
 
 
-def download_10_k():
-    years = os.listdir('index')
-    for year in years[6:]:
+def download_10_k(start_year, end_year, company_name=''):
+    '''
+    Downloads files form Edgar
+    :param start_year: int, year from which dowloading starts
+    :param end_year: int, where it ends
+    :param company_name: str, company name EXACTLY as in index files
+    :return:
+    '''
+    # For every year in range
+    for year in range(start_year, end_year + 1):
         print(year)
-        if year not in os.listdir('forms'):
-            os.mkdir('forms' + os.sep + year)
-        files = os.listdir('index' + os.sep + year)
+        # If the folder for this year doesn't exist, create a folder
+        if str(year) not in os.listdir('forms'):
+            os.mkdir('forms' + os.sep + str(year))
+        # Get index files for this year
+        files = os.listdir('index' + os.sep + str(year))
+        # For every index file
         for file in files:
-            links = get_links('index' + os.sep + year + os.sep + file)
+            # Get all the links from the index file
+            links = get_links('index' + os.sep + str(year) + os.sep + file, company_name)
+            # For every link
             for i, row in links.iterrows():
+                # Create filename
                 name = sanitize_filename(row['Company Name'])
-                if not os.path.exists('forms'+os.sep+year+os.sep+name+'.txt'):
+                # If the file doesn't exist already, download it from database
+                if not os.path.exists('forms'+os.sep+str(year)+os.sep+name+'.txt'):
+                    # Create url
                     url = 'https://www.sec.gov/Archives/%s' % (row['Filename'])
+                    # Download text
                     text = requests.get(url).content.decode("utf-8", "ignore")
-                    with open('forms' + os.sep + year + os.sep + name + '.txt', 'w', encoding='utf-8') as f:
+                    # Write it in the file
+                    with open('forms' + os.sep + str(year) + os.sep + name + '.txt', 'w', encoding='utf-8') as f:
                         f.write(text)
 
 
 
-
-# download_index(2000, 2019)
-# clean_index()
-download_10_k()
+if __name__ == '__main__':
+    # download_index(2000, 2019)
+    # clean_index()
+    download_10_k(2010, 2018, 'APPLE INC')
+    #print(os.listdir('index'))
