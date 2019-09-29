@@ -4,6 +4,7 @@ import os
 import re
 import pandas as pd
 from pathvalidate import sanitize_filename
+from bs4 import BeautifulSoup
 
 # Please download index files chunk by chunk. For example, please first download index files during 1993–2000, then
 # download index files during 2001–2005 by changing the following two lines repeatedly, and so on. If you need index
@@ -68,6 +69,22 @@ def get_links(filename, company_name=''):
     print(df)
     return df[df['Form Type'] == '10-K']
 
+def clean_text(text):
+    """ Clean the raw text file. """
+    # From the text file extract only DOCUMENT of
+    # type 10-K (DOCUMENTs of other types don't contain
+    # useful text.
+    soup = BeautifulSoup('\n'.join(re.findall('<TYPE>10-K.*?</DOCUMENT>', text,
+        re.S)))
+
+    # Get pure text from html DOCUMENT and lowercase them.
+    txt = soup.get_text().lower()
+
+    # Remove all the non-word character to get only words.
+    txt = re.sub('[^A-Za-z-\']*[^A-Za-z-\']', ' ', txt)
+
+    return txt
+
 
 def download_10_k(start_year, end_year, company_name=''):
     '''
@@ -99,9 +116,11 @@ def download_10_k(start_year, end_year, company_name=''):
                     url = 'https://www.sec.gov/Archives/%s' % (row['Filename'])
                     # Download text
                     text = requests.get(url).content.decode("utf-8", "ignore")
+                    # Clean text
+                    cleaned = clean_text(text)
                     # Write it in the file
                     with open('forms' + os.sep + str(year) + os.sep + name + '.txt', 'w', encoding='utf-8') as f:
-                        f.write(text)
+                        f.write(cleaned)
 
 
 
