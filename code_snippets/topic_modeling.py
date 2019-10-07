@@ -42,6 +42,9 @@ def topic_modeling(start_year, end_year, companies=[''],
         Return:
             (pd.DataFrame, lda_model)
     """
+    # Query desired reports for tf-idf.
+    docs = query_docs(start_year, end_year, companies)
+
     # Get Bag-of-Words format for the docs.
     bow_corpus, dictionary = get_bow_corpus(docs)
 
