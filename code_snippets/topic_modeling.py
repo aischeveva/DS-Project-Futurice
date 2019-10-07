@@ -26,8 +26,8 @@ def get_bow_corpus(docs):
     bow_corpus = [dictionary.doc2bow(doc) for doc in tokenized_docs]
     return bow_corpus, dictionary
 
-def topic_modeling(start_year, end_year, companies=[''],
-                   num_topics, passes, num_cores):
+def topic_modeling(num_topics, passes, num_cores,
+        start_year, end_year, companies=['']):
     """ Use DA topic modeling to extract topic dictribution
         of documents over years.
         --------------------
