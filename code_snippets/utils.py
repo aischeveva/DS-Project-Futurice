@@ -26,16 +26,15 @@ def preprocess(start_year, end_year, companies=['']):
             # Bring to lower, strip punctuation, split by spaces
             text = gensim.utils.simple_preprocess(text, min_len=4)
             # Lemmatize to root.
-            lemmatizer = nltk.stem.WordNetLemmatizer()
-            text = [lemmatizer.lemmatize(w) for w in text]
-            print(text)
+            stemmer = nltk.stem.PorterStemmer()
+            text = [stemmer.stem(w) for w in text]
             if str(year) not in os.listdir('cleaned'):
                 os.mkdir('cleaned' + os.sep + str(year))
             cleaned = f'cleaned/{str(year)}/{company}'
             with open(cleaned, 'w', encoding='utf-8') as f:
                 f.write(' '.join(text))
             # Print out the year to check missing years
-            print(year)
+        print(year)
 
 def query_docs(start_year, end_year, companies=['']):
     """ Query documents from folder 'cleaned'.
