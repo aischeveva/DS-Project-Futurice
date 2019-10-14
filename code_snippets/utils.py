@@ -1,6 +1,44 @@
 import os
 import gensim
 import nltk
+from pathvalidate import sanitize_filename
+import pandas as pd
+
+
+def rename_to_index(start_year, end_year):
+    '''
+    Rename the files from companies' names into indices in folders 'forms' and 'cleaned'.
+    :param start_year: first year of interest
+    :param end_year: last year, not included
+    :return: None
+    '''
+    for year in range(start_year, end_year):
+        print(year)
+        # Get index files for this year
+        files = os.listdir('index' + os.sep + str(year))
+        # For every index file
+        for file in files:
+            # Get the dataframe from index file
+            df = pd.read_csv('index' + os.sep + str(year) + os.sep + file, sep='|')
+            df = df[df['Form Type'] == '10-K']
+            # For every link
+            for i, row in df.iterrows():
+                # Create filename
+                name = sanitize_filename(row['Company Name'])
+                old_name = 'forms'+os.sep+str(year)+os.sep+name+'.txt'
+                new_name = 'forms'+os.sep+str(year)+os.sep+str(row['CIK'])+'.txt'
+                # Check that the file exists
+                if os.path.exists(old_name) and not os.path.exists(new_name):
+                    # Rename
+                    os.rename(old_name,
+                              new_name)
+                # Rename processed files as well
+                old_name = 'cleaned' + os.sep + str(year) + os.sep + name + '.txt'
+                new_name = 'cleaned' + os.sep + str(year) + os.sep + str(row['CIK']) + '.txt'
+                if os.path.exists(old_name) and not os.path.exists(new_name):
+                    os.rename(old_name,
+                              new_name)
+
 
 def preprocess(start_year, end_year, companies=['']):
     """ Preprocess input documents and save the results to
