@@ -19,8 +19,12 @@ def preprocess(start_year, end_year, companies=['']):
             companies = os.listdir(f'forms/{str(year)}')
         for company in companies:
             filename = f'forms/{str(year)}/{company}'
-            with open(filename, 'r', encoding='utf-8') as f:
-                text = f.read()
+            #If company file not found, continue
+            try:
+                with open(filename, 'r', encoding='utf-8') as f:
+                    text = f.read()
+            except Exception: 
+                continue
             # Remove stopwords
             text = gensim.parsing.remove_stopwords(text)
             # Bring to lower, strip punctuation, split by spaces
