@@ -1,0 +1,89 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Chaaaaaaarts</title>
+		<!-- All the imports should be here -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+		<script src="https://code.highcharts.com/highcharts.js"></script>
+		<script src="https://code.highcharts.com/modules/series-label.js"></script>
+		<script src="https://code.highcharts.com/modules/exporting.js"></script>
+		<script src="https://code.highcharts.com/modules/export-data.js"></script>
+		<script src="https://code.highcharts.com/modules/data.js"></script>
+	</head>
+	<body>
+	<!-- Navigation panel -->
+	<nav class="navbar navbar-expand-lg navbar-light bg-light">
+		<a class="navbar-brand">Our Magnificent Project</a>
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse" id="navbarText">
+			<ul class="navbar-nav mr-auto">
+			<!-- You can add links to more pages here as elements of this list -->
+			<li class="nav-item active">
+				<a class="nav-link" href="/">Main</a>
+			</li>
+			</ul>
+		</div>
+	</nav>
+	<!-- Main container -->
+	<div class="container-fluid">
+		<!--Graphs have to be here-->
+		<!-- k is passed from python app -->
+		<div id="container" my_data='{{ k }}'></div>
+		<script type="text/javascript">
+		Highcharts.chart('container', {
+			title: {
+				text: 'Tf-idf trends, 2010-2018'
+			},
+
+			subtitle: {
+				text: 'Source: Edgar database'
+			},
+			// get the data from the container
+			data: {
+				csv: document.getElementById('container').attributes[1].value
+			},
+
+			yAxis: {
+				title: {
+					text: 'tf-idf'
+				}
+			},
+			legend: {
+				layout: 'vertical',
+				align: 'right',
+				verticalAlign: 'middle'
+			},
+
+			plotOptions: {
+				series: {
+					label: {
+						connectorAllowed: false
+					},
+					pointStart: 2010
+				}
+			},
+
+			responsive: {
+				rules: [{
+					condition: {
+						maxWidth: 500
+					},
+					chartOptions: {
+						legend: {
+							layout: 'horizontal',
+							align: 'center',
+							verticalAlign: 'bottom'
+						}
+					}
+				}]
+			}
+
+	}); </script>
+	</div>
+	</body>
+</html>

@@ -127,5 +127,5 @@ def download_10_k(start_year, end_year, company_name=''):
 if __name__ == '__main__':
     # download_index(2000, 2019)
     # clean_index()
-    download_10_k(2010, 2018, 'APPLE INC')
+    download_10_k(2012, 2018, 'APPLE INC')
     #print(os.listdir('index'))
