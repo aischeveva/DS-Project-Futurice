@@ -44,7 +44,7 @@ def rename_to_index(start_year, end_year):
                     os.rename(old_name,
                               new_name)
 
-def preprocess(start_year, end_year, companies=['']):
+def preprocess(start_year, end_year, companies=None):
     """ Preprocess input documents and save the results to
         folder name 'cleaned'.
         --------------------
@@ -56,8 +56,13 @@ def preprocess(start_year, end_year, companies=['']):
         Return:
             None
     """
+
+    no_default_companies = False
+    if not companies:
+        no_default_companies = True
+
     for year in range(start_year, end_year):
-        if companies[0] == '':
+        if no_default_companies:
             companies = os.listdir(f'forms/{str(year)}')
         for company in companies:
             filename = f'forms/{str(year)}/{company}'
@@ -82,7 +87,7 @@ def preprocess(start_year, end_year, companies=['']):
             # Print out the year to check missing years
         print(year)
 
-def query_docs(start_year, end_year, companies=['']):
+def query_docs(start_year, end_year, companies=None):
     """ Query documents from folder 'cleaned'.
         --------------------
         Parameter:
@@ -98,9 +103,12 @@ def query_docs(start_year, end_year, companies=['']):
     # Create list of years in string format
     years = [str(year) for year in range(start_year, end_year)]
     # Open the docs in loop
+    no_default_companies = False
+    if not companies:
+        no_default_companies = True
     for year in years:
         text_dump = ''
-        if companies[0] == '':
+        if no_default_companies:
             companies = os.listdir('cleaned' + os.sep + str(year))
         # Open the report
         for company in companies:
