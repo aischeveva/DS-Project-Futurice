@@ -152,6 +152,16 @@ def SIC_2_Industry_df():
         Return:
             pd.DataFrame
     """
+    # Auxiliary function for merging industries
+    # according to merge.csv (merge.csv is built manually).
+    merger = pd.read_csv('merge.csv')
+    def merge(data):
+        sic = int(data[0])
+        for (_, c) in merger.T.iteritems():
+            if c['Start'] <= sic <= c['End']:
+                return [data[0], data[1], c['Name']]
+        return data
+
     # Get url of the SIC list.
     url='https://www.sec.gov/info/edgar/siccodes.htm'
     # Create a handle, page, to handle the contents of the website.
@@ -165,6 +175,7 @@ def SIC_2_Industry_df():
     # Read data into dictionary.
     for row in rows[1:]:
         data = [t.text_content() for t in row.iterchildren()]
+        data = merge(data)
         dic['SIC Code'].append(data[0])
         dic['Office'].append(data[1])
         dic['Industry Title'].append(data[2])
