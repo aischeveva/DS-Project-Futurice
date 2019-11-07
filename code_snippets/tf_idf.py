@@ -5,7 +5,7 @@ import os
 import gensim
 from utils import *
 
-def tf_idf(start_year, end_year, companies=['']):
+def tf_idf(start_year, end_year, companies=None):
     """ Compute tf-idf scores for documents of each year
         and return a dataframe containing 20 highest-score
         words vs years.
