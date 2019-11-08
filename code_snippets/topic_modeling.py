@@ -8,6 +8,10 @@ def get_bow_corpus(docs, no_below, no_above):
         --------------------
         Parameter:
             docs: document corpus
+            no_below: filter words that appear in less than
+                      'no_below' number of document.
+            no_above: filter words that appear in more than
+                      'no_above' percent of document.
 
         Return:
             (bow corpus, dictionary)
@@ -18,6 +22,7 @@ def get_bow_corpus(docs, no_below, no_above):
     # Create a dictionary from 'docs' containing
     # the number of times a word appears in the training set:
     dictionary = gensim.corpora.Dictionary(tokenized_docs)
+
     # Filter extremes vocabularies:
     dictionary.filter_extremes(no_below=no_below, no_above=no_above)
 
@@ -62,44 +67,3 @@ def topic_modeling(num_topics, passes, num_cores, chunk, freq,
 
 
     return lda_model, bow_corpus, dictionary
-
-"""
-def predict_topic(start_year, end_year, model, dic):
-    for year
-
-
-    # Get the topic distribution for all of the docs.
-    probabilities = []
-    for i in range(len(bow_corpus)):
-        topic_vec = lda_model.get_document_topics(bow_corpus[i],
-                                                  minimum_probability=0.0)
-        topic_probs = [p[1] for p in topic_vec]
-        probabilities.append(topic_probs)
-
-    # Get the year range to serve as indices for the return dataframe.
-    years = range(start_year, end_year)
-
-    # Return dataframe of topic distribution over years.
-    return (pd.DataFrame(probabilities, index=years).T, lda_model)
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
