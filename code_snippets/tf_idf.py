@@ -5,7 +5,7 @@ import os
 import gensim
 from utils import *
 
-def tf_idf(start_year, end_year, companies=None):
+def tf_idf(start_year, end_year, office, sector, companies=None):
     """ Compute tf-idf scores for documents of each year
         and return a dataframe containing 20 highest-score
         words vs years.
@@ -13,13 +13,16 @@ def tf_idf(start_year, end_year, companies=None):
         Parameter:
             start_year: starting year of interest
             end_year: ending year of interest
+            office:
+            sector:
             companies (list of str): list of interested companies
 
         Return:
             pd.DataFrame of tf_idf score vs years
     """
     # Query desired reports for tf-idf.
-    reports = query_docs(start_year, end_year, companies)
+    reports = query_docs(start_year, end_year, office,
+            sector, True, companies)
 
     # Create list of years in string format
     years = [str(year) for year in range(start_year, end_year)]

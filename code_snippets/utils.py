@@ -87,39 +87,47 @@ def preprocess(start_year, end_year, companies=None):
             # Print out the year to check missing years
         print(year)
 
-def query_docs(start_year, end_year, companies=None):
+def query_docs(start_year, end_year, office, sector,
+        combine, companies=['']):
     """ Query documents from folder 'cleaned'.
         --------------------
         Parameter:
             start_year: starting year of interest
             end_year: ending year of interest
+            office: Office's name
+            sector: sector's name
+            combine: if True, then documents within 1 year are
+                     combined into 1 long string; if False, each
+                     year will be a list of documents
             companies (list of str): list of interested companies
 
         Return:
-            list of textual documents
+            list of documents
     """
-    # Create an empty list for the docs
+    # Create an empty list for the docs:
     docs = []
-    # Create list of years in string format
+    # Create list of years in string format:
     years = [str(year) for year in range(start_year, end_year)]
-    # Open the docs in loop
-    no_default_companies = False
-    if not companies:
-        no_default_companies = True
+    # Open the docs in loop:
     for year in years:
-        text_dump = ''
-        if no_default_companies:
-            companies = os.listdir('cleaned' + os.sep + str(year))
-        # Open the report
+        dump = []
+        if companies[0] == '':
+            path = "industries" + os.sep + str(year) + os.sep \
+                 + "Office of " + office + os.sep + sector
+            companies = os.listdir(path)
+        # Open the report:
         for company in companies:
             try:
-                with open(f'cleaned/{year}/{company}', 'r', encoding='utf-8') as f:
-                    # Read the report
-                    text_dump += f.read()
+                with open(path + os.sep + company, 'r') as f:
+                    # Read the report:
+                    dump.append(f.read())
             except Exception:
                 continue
-        # Append report to the list
-        docs.append(text_dump)
+        # Append report to the list:
+        if combine:
+            docs.append(' '.join(dump))
+        else:
+            docs.append(dump)
     return docs
 
 def CIK_2_SIC_series():
