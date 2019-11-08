@@ -112,7 +112,7 @@ def query_docs(start_year, end_year, office, sector,
     for year in years:
         dump = []
         if companies[0] == '':
-            path = "industries" + os.sep + str(year) + os.sep \
+            path = "industries" + os.sep + str(year) + os.sep  \
                  + "Office of " + office + os.sep + sector
             companies = os.listdir(path)
         # Open the report:
