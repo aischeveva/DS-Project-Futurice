@@ -272,3 +272,16 @@ def classify_industry(start_year, end_year):
             except Exception:
                 continue
 
+def change_to_txt(start, end):
+    import os
+    for year in range(start, end):
+        path = "industries/" + str(year) + "/"
+        for office in os.listdir(path):
+            path = path + office + "/"
+            for sector in os.listdir(path):
+                path = path + sector + "/"
+                for company in os.listdir(path):
+                    old = path + company
+                    new = old + ".txt"
+                    os.rename(old, new)
+
