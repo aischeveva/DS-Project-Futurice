@@ -275,13 +275,13 @@ def classify_industry(start_year, end_year):
 def change_to_txt(start, end):
     import os
     for year in range(start, end):
-        path = "industries/" + str(year) + "/"
-        for office in os.listdir(path):
-            path = path + office + "/"
-            for sector in os.listdir(path):
-                path = path + sector + "/"
-                for company in os.listdir(path):
-                    old = path + company
+        path_year = "industries/" + str(year) + "/"
+        for office in os.listdir(path_year):
+            path_office = path_year + office + "/"
+            for sector in os.listdir(path_office):
+                path_sector = path_office + sector + "/"
+                for company in os.listdir(path_sector):
+                    old = path_sector + company
                     new = old + ".txt"
                     os.rename(old, new)
 
