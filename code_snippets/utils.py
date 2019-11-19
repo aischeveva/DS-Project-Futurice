@@ -277,11 +277,14 @@ def change_to_txt(start, end):
     for year in range(start, end):
         path_year = "industries/" + str(year) + "/"
         for office in os.listdir(path_year):
-            path_office = path_year + office + "/"
-            for sector in os.listdir(path_office):
-                path_sector = path_office + sector + "/"
-                for company in os.listdir(path_sector):
-                    old = path_sector + company
-                    new = old + ".txt"
-                    os.rename(old, new)
+            if office != '.DS_Store':
+                path_office = path_year + office + "/"
+                for sector in os.listdir(path_office):
+                    if sector != '.DS_Store':
+                        path_sector = path_office + sector + "/"
+                        for company in os.listdir(path_sector):
+                            if company != '.DS_Store':
+                                old = path_sector + company
+                                new = old + ".txt"
+                                os.rename(old, new)
 
