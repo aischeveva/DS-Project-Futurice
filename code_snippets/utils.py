@@ -8,6 +8,7 @@ import pandas as pd
 import lxml.html as lh
 from pathvalidate import sanitize_filename
 from bs4 import BeautifulSoup
+from functools import reduce
 
 
 def rename_to_index(start_year, end_year):
@@ -87,9 +88,56 @@ def preprocess(start_year, end_year, companies=None):
             # Print out the year to check missing years
         print(year)
 
+def query_intersection(start_year, end_year, office, sector,
+        combine, intersection=True):
+    """ Query documents from folder 'industries'.
+        --------------------
+        Parameter:
+            start_year: starting year of interest
+            end_year: ending year of interest
+            office: Office's name
+            sector: sector's name
+            combine: if True, then documents within 1 year are
+                     combined into 1 long string; if False, each
+                     year will be a list of documents
+            companies (list of str): list of interested companies
+
+        Return:
+            list of documents
+    """
+    docs = []
+    # Find intersection of companies over years:
+    for year in range(start_year, end_year+1):
+        path = "industries" + os.sep + str(year) + os.sep  \
+             + "Office of " + office + os.sep + sector
+        docs.append(os.listdir(path))
+    companies = reduce(lambda x, y: set(x).intersection(set(y)), docs)
+
+    # Create an empty list for the docs:
+    docs = []
+    # Open the docs in loop:
+    for year in range(start_year, end_year+1):
+        dump = []
+        path = "industries" + os.sep + str(year) + os.sep  \
+             + "Office of " + office + os.sep + sector
+        # Open the report:
+        for company in companies:
+            try:
+                with open(path + os.sep + company, 'r') as f:
+                    # Read the report:
+                    dump.append(f.read())
+            except Exception:
+                continue
+        # Append report to the list:
+        if combine:
+            docs.append(' '.join(dump))
+        else:
+            docs.append(dump)
+    return docs
+
 def query_docs(start_year, end_year, office, sector,
         combine, companies=['']):
-    """ Query documents from folder 'cleaned'.
+    """ Query documents from folder 'industries'.
         --------------------
         Parameter:
             start_year: starting year of interest

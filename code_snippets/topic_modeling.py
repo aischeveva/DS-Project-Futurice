@@ -1,4 +1,5 @@
-import gensim
+import re, functools, operator, collections
+import numpy as np
 import pandas as pd
 from utils import *
 from sklearn.utils import shuffle
@@ -6,9 +7,34 @@ from gensim.utils import simple_preprocess
 from gensim.corpora import Dictionary
 from gensim.models import LdaMulticore
 from gensim.models.coherencemodel import CoherenceModel
+from gensim.models.phrases import Phrases, Phraser
 
+def merge_bows(bows, dic):
+    token = []
+    for bow in bows:
+        for pair in bow:
+            for _ in range(pair[1]):
+                token.append(dic[pair[0]])
+    return dic.doc2bow(token)
 
-def tokens_bows_dict(docs, no_below, no_above):
+def get_bows_vs_years(corpus, dic, bigrams):
+    result = []
+    for year in corpus:
+        bows = []
+        for doc in year:
+            # Get tokens from documents:
+            token = bigrams[simple_preprocess(doc)]
+            # Convert tokens to BoW format:
+            bow = dic.doc2bow(token)
+            # Append BoW to list before merging:
+            bows.append(bow)
+        # Merge BoWs of 1 year into 1 big BoW:
+        # result.append(merge_bows(bows, dic))
+        result.append(bows)
+    return result
+
+def tokens_bows_dict(docs, no_below, no_above, min_count, threshold,
+        bigrams=True):
     """ Get the bag-of-word form and dictionary from the document corpus.
         --------------------
         Parameter:
@@ -22,11 +48,16 @@ def tokens_bows_dict(docs, no_below, no_above):
             (bow corpus, dictionary)
     """
     # Tokenize documents:
-    tokenized_docs = [gensim.utils.simple_preprocess(doc) for doc in docs]
+    texts = [simple_preprocess(doc) for doc in docs]
+
+    if bigrams:
+        tmp = Phrases(texts, min_count=min_count, threshold=threshold)
+        bigrams = Phraser(tmp)
+        texts = [bigrams[doc] for doc in texts]
 
     # Create a dictionary from 'docs' containing
     # the number of times a word appears in the training set:
-    dictionary = gensim.corpora.Dictionary(tokenized_docs)
+    dictionary = gensim.corpora.Dictionary(texts)
 
     # Filter extremes vocabularies:
     dictionary.filter_extremes(no_below=no_below, no_above=no_above)
@@ -34,9 +65,9 @@ def tokens_bows_dict(docs, no_below, no_above):
     # Create the Bag-of-words model for each document i.e for
     # each document we create a dictionary reporting how many
     # words and how many times those words appear:
-    bow_corpus = [dictionary.doc2bow(doc) for doc in tokenized_docs]
+    bows = [dictionary.doc2bow(text) for text in texts]
 
-    return tokenized_docs, bow_corpus, dictionary
+    return texts, bows, dictionary, bigrams
 
 def train_test_split(texts, bows, test_size=0.2):
     """ Split corpus into train and test set.
@@ -93,39 +124,50 @@ def models_codherence_perplexity(texts_train, texts_test, bows_train,
         perplexity_scores.append(model.log_perplexity(bows_test))
     return models, coherence_scores, perplexity_scores
 
-'''
-def topic_modeling(num_topics, passes, num_cores, chunk, freq,
-        train_year, office, sector, companies=['']):
-    """ Use DA topic modeling to extract topic dictribution
-        of documents over years.
-        --------------------
-        Parameter:
-            start_year: starting year of interest
-            end_year: ending year of interest
-            companies (list of str): list of interested companies
-            num_topics: fixed number of topics to be extracted
-            passes: number of passes through document data in training
-            num_cores: number of processors used in training
+def word_histogram(bows, model, dic):
+    topics = [[topic[0] for topic in model[bow]] for bow in bows]
+    topics = functools.reduce(operator.iconcat, topics, [])
+    topic_map = dict(model.show_topics(model.num_topics))
+    topic_map = {k: re.findall(r'[a-z]+', v) for (k, v) in topic_map.items()}
+    words = [topic_map[topic] for topic in topics]
+    words = functools.reduce(operator.iconcat, words, [])
+    return [(dic[p[0]], p[1]) for p in dic.doc2bow(words)]
 
-        Return:
-            (pd.DataFrame, lda_model)
-    """
-    # Query desired reports for tf-idf.
-    docs = query_docs(train_year, train_year+1, office,
-            sector, False, companies)
+def topic_union(top_topics, topic_list, corr, num):
+    """ Con cac. """
+    # Get the topic map:
+    topic_map = dict(topic_list)
+    topic_map = {k: re.findall(r'[a-z_]+', v) for k, v in topic_map.items()}
+    topic_map = {''.join(v): k for k, v in topic_map.items()}
+    # Get the top independent topics:
+    corr_sum = np.sum(corr, axis=1)
+    top_independence = []
+    for _ in range(num):
+        top_index = np.argmax(corr_sum)
+        corr_sum[top_index] = 0
+        top_independence.append(top_index)
+    # Get the top coherence topics:
+    top_coherence = [[q[1] for q in p[0]] for p in top_topics[:num]]
+    top_coherence = [''.join(pre) for pre in top_coherence]
+    top_coherence = [topic_map[pre] for pre in top_coherence]
+    return sorted(list(set(top_independence).union(set(top_coherence))))
 
-    # Get Bag-of-Words format for the docs.
-    bow_corpus, dictionary = get_bow_corpus(docs[0], freq)
+def convert_topic(topics, union, corr):
+    for i in range(len(topics)):
+        if topics[i] not in union:
+            corr_score = corr[topics[i]][union]
+            topics[i] = union[np.argmin(corr_score)]
+    return topics
 
-    # Train lda model using gensim.models.LdaMulticore and save it to 'lda_model'
-    lda_model =  gensim.models.LdaMulticore(bow_corpus,
-                                            num_topics = num_topics,
-                                            chunksize = chunk,
-                                            id2word = dictionary,
-                                            eta = 'auto',
-                                            passes = passes,
-                                            workers = num_cores)
+def topic_histogram(bows, model, min_prob, union, corr):
+    tmp = [model.get_document_topics(bow, minimum_probability=min_prob)
+            for bow in bows]
+    tmp = [[p[0] for p in l] for l in tmp]
+    topics = [convert_topic(topics, union, corr) for topics in tmp]
+    topics = functools.reduce(operator.iconcat, topics, [])
+    return list(collections.Counter(topics).items())
 
+def topic_hist_years(corpus, model, min_prob, union, corr):
+    return [topic_histogram(bows, model, min_prob, union, corr)
+            for bows in corpus]
 
-    return lda_model, bow_corpus, dictionary
-'''
