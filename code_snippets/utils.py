@@ -107,7 +107,7 @@ def query_intersection(start_year, end_year, office, sector,
     """
     docs = []
     # Find intersection of companies over years:
-    for year in range(start_year, end_year+1):
+    for year in range(start_year, end_year):
         path = "industries" + os.sep + str(year) + os.sep  \
              + "Office of " + office + os.sep + sector
         docs.append(os.listdir(path))
@@ -116,7 +116,7 @@ def query_intersection(start_year, end_year, office, sector,
     # Create an empty list for the docs:
     docs = []
     # Open the docs in loop:
-    for year in range(start_year, end_year+1):
+    for year in range(start_year, end_year):
         dump = []
         path = "industries" + os.sep + str(year) + os.sep  \
              + "Office of " + office + os.sep + sector
@@ -271,20 +271,3 @@ def classify_industry(start_year, end_year):
                 shutil.move(old, new)
             except Exception:
                 continue
-
-def change_to_txt(start, end):
-    import os
-    for year in range(start, end):
-        path_year = "industries/" + str(year) + "/"
-        for office in os.listdir(path_year):
-            if office != '.DS_Store':
-                path_office = path_year + office + "/"
-                for sector in os.listdir(path_office):
-                    if sector != '.DS_Store':
-                        path_sector = path_office + sector + "/"
-                        for company in os.listdir(path_sector):
-                            if company != '.DS_Store':
-                                old = path_sector + company
-                                new = old + ".txt"
-                                os.rename(old, new)
-
