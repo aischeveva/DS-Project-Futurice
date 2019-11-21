@@ -1,4 +1,4 @@
-import re, functools, operator, collections
+import re, functools, operator, collections, random
 import numpy as np
 import pandas as pd
 from utils import *
@@ -17,21 +17,24 @@ def merge_bows(bows, dic):
                 token.append(dic[pair[0]])
     return dic.doc2bow(token)
 
-def get_bows_vs_years(corpus, dic, bigrams):
-    result = []
+def get_texts_bows_vs_years(corpus, dic, bigrams):
+    text_res= []
+    bow_res = []
     for year in corpus:
+        texts = []
         bows = []
         for doc in year:
             # Get tokens from documents:
-            token = bigrams[simple_preprocess(doc)]
+            text = bigrams[simple_preprocess(doc)]
+            texts.append(text)
             # Convert tokens to BoW format:
-            bow = dic.doc2bow(token)
-            # Append BoW to list before merging:
+            bow = dic.doc2bow(text)
             bows.append(bow)
         # Merge BoWs of 1 year into 1 big BoW:
         # result.append(merge_bows(bows, dic))
-        result.append(bows)
-    return result
+        text_res.append(texts)
+        bow_res.append(bows)
+    return text_res, bow_res
 
 def tokens_bows_dict(docs, no_below, no_above, min_count, threshold,
         bigrams=True):
@@ -86,8 +89,8 @@ def train_test_split(texts, bows, test_size=0.2):
     bows_train, bows_test = bows_shuf[:split], bows_shuf[split:]
     return texts_train, texts_test, bows_train, bows_test
 
-def models_codherence_perplexity(texts_train, texts_test, bows_train,
-        bows_test, dic, topic_start=10, topic_end=201, step=10,
+def models_codherence_perplexity(texts, bows, dic,
+        topic_start=10, topic_end=201, step=10,
         chunk=10, passes=3, cores=2):
     """ Build models on a range of number of topics to compare quality.
         The output is 3 lists of:
@@ -112,16 +115,16 @@ def models_codherence_perplexity(texts_train, texts_test, bows_train,
     for num_topics in range(topic_start, topic_end, step):
         print('Building model of %d topics' % (num_topics))
         # Build topic model for the given number of topics:
-        model = LdaMulticore(corpus=bows_train, id2word=dic,
+        model = LdaMulticore(corpus=bows, id2word=dic,
                              eta='auto', num_topics=num_topics,
                              chunksize=chunk, passes=passes, workers=cores)
         # Build coherence model to test the topic model:
-        coherence_model = CoherenceModel(model=model, texts=texts_train,
-                                         dictionary=dic, coherence='c_v')
+        coherence_model = CoherenceModel(model=model, corpus=bows,
+                                         dictionary=dic, coherence='u_mass')
         # Save the results:
         models.append(model)
         coherence_scores.append(coherence_model.get_coherence())
-        perplexity_scores.append(model.log_perplexity(bows_test))
+        perplexity_scores.append(model.log_perplexity(bows))
     return models, coherence_scores, perplexity_scores
 
 def word_histogram(bows, model, dic):
@@ -134,7 +137,11 @@ def word_histogram(bows, model, dic):
     return [(dic[p[0]], p[1]) for p in dic.doc2bow(words)]
 
 def topic_union(top_topics, topic_list, corr, num):
-    """ Con cac. """
+    """ Get a collection of preference topics.
+        Preference topics is consist of top topics w.r.t
+        coherence score, union with top topics that are least
+        correlated with other topics.
+    """
     # Get the topic map:
     topic_map = dict(topic_list)
     topic_map = {k: re.findall(r'[a-z_]+', v) for k, v in topic_map.items()}
@@ -148,7 +155,7 @@ def topic_union(top_topics, topic_list, corr, num):
         top_independence.append(top_index)
     # Get the top coherence topics:
     top_coherence = [[q[1] for q in p[0]] for p in top_topics[:num]]
-    top_coherence = [''.join(pre) for pre in top_coherence]
+    top_coherence = [''.join(presentation) for presentation in top_coherence]
     top_coherence = [topic_map[pre] for pre in top_coherence]
     return sorted(list(set(top_independence).union(set(top_coherence))))
 
@@ -165,9 +172,20 @@ def topic_histogram(bows, model, min_prob, union, corr):
     tmp = [[p[0] for p in l] for l in tmp]
     topics = [convert_topic(topics, union, corr) for topics in tmp]
     topics = functools.reduce(operator.iconcat, topics, [])
-    return list(collections.Counter(topics).items())
+    hist = {topic: 0 for topic in union}
+    for topic in topics:
+        hist[topic] += 1
+    hist = list(hist.items())
+    hist.sort()
+    return hist
 
 def topic_hist_years(corpus, model, min_prob, union, corr):
     return [topic_histogram(bows, model, min_prob, union, corr)
             for bows in corpus]
 
+def sampling_corpus(corpus, percent=0.2):
+    sample = []
+    num = int(len(corpus[0])*percent)
+    for cor in corpus:
+        sample = sample + random.sample(cor, k=num)
+    return sample
