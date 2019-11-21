@@ -9,32 +9,20 @@ from gensim.models import LdaMulticore
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.models.phrases import Phrases, Phraser
 
-def merge_bows(bows, dic):
-    token = []
-    for bow in bows:
-        for pair in bow:
-            for _ in range(pair[1]):
-                token.append(dic[pair[0]])
-    return dic.doc2bow(token)
-
 def get_texts_bows_vs_years(corpus, dic, bigrams):
-    text_res= []
     bow_res = []
     for year in corpus:
-        texts = []
         bows = []
         for doc in year:
             # Get tokens from documents:
             text = bigrams[simple_preprocess(doc)]
-            texts.append(text)
             # Convert tokens to BoW format:
             bow = dic.doc2bow(text)
             bows.append(bow)
         # Merge BoWs of 1 year into 1 big BoW:
         # result.append(merge_bows(bows, dic))
-        text_res.append(texts)
         bow_res.append(bows)
-    return text_res, bow_res
+    return bow_res
 
 def tokens_bows_dict(docs, no_below, no_above, min_count, threshold,
         bigrams=True):
@@ -119,8 +107,8 @@ def models_codherence_perplexity(texts, bows, dic,
                              eta='auto', num_topics=num_topics,
                              chunksize=chunk, passes=passes, workers=cores)
         # Build coherence model to test the topic model:
-        coherence_model = CoherenceModel(model=model, corpus=bows,
-                                         dictionary=dic, coherence='u_mass')
+        coherence_model = CoherenceModel(model=model, texts=texts,
+                                         dictionary=dic, coherence='c_v')
         # Save the results:
         models.append(model)
         coherence_scores.append(coherence_model.get_coherence())
@@ -187,5 +175,48 @@ def sampling_corpus(corpus, percent=0.2):
     sample = []
     num = int(len(corpus[0])*percent)
     for cor in corpus:
-        sample = sample + random.sample(cor, k=num)
+        sample = sample + random.choices(cor, k=num)
     return sample
+
+def run(office, sector, start_year, end_year):
+    """ Analyze topics for the office and sector.
+
+    """
+    # Get the training documents from 1 year:
+    corpus = query_intersection(2010, 2019, office, sector, False)
+    # Sampling documents in each year for training:
+    docs = sampling_corpus(corpus, percent=1/(end_year - start_year))
+    # Covert documents to tokens, bag of word and dictionary format:
+    texts, bows, dic, bigrams = tokens_bows_dict(docs, 2, 0.5, 2, 80, True)
+    # Build models for comparison:
+    start = max(len(docs) - 70, 10)
+    end = len(docs) + 1
+    step = 10
+    models, coherences, perplexities = models_codherence_perplexity(
+            texts, bows, dic,                            \
+            topic_start=start, topic_end=end, step=step, \
+            chunk=20, passes=3)
+    # Choose a good model:
+    per = [-p for p in perplexities]
+    per = [(p - min(per))/(max(per) - min(per)) for p in per]
+    which = [per[i]*coherences[i] for i in range(len(per))]
+    which = np.argmax(which)
+    chosen = models[which]
+    # Get texts and bows for each year:
+    bows_vs_years = get_texts_bows_vs_years(corpus, dic, bigrams)
+    # Prepare to get topic union:
+    topic_list = chosen.show_topics(chosen.num_topics, 10)
+    top_topics = chosen.top_topics(texts=texts, coherence='c_v', topn=10)
+    # Get the correlation matrix:
+    mdiff, _ = chosen.diff(chosen, distance='jaccard', num_words=100)
+    # Get top topics based on coherence and correlation:
+    union = topic_union(top_topics, topic_list, mdiff, 10)
+    # Get the count for each topic in each year:
+    hists = topic_hist_years(bows_vs_years, chosen, 0.01, union, mdiff)
+    # Get DataFrame:
+    data = [[p[1] for p in hist] for hist in hists]
+    pre = [' | '.join(re.findall(r'[a-z_]+', topic_list[i][1])) \
+            for i in union]
+    df = pd.DataFrame(data, columns=pre, index=range(2010, 2019))
+    # Save the model:
+    df.to_csv(os.getcwd()[:-14] + '/web/source/topicm'+"_"+office+"_"+sector+".csv")
