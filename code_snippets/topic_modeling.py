@@ -157,8 +157,8 @@ def convert_topic(topics, union, corr):
 def topic_histogram(bows, model, min_prob, union, corr):
     tmp = [model.get_document_topics(bow, minimum_probability=min_prob)
             for bow in bows]
-    tmp = [[p[0] for p in l] for l in tmp]
-    topics = [convert_topic(topics, union, corr) for topics in tmp]
+    tmp = [[p[0] for p in l if p[0] in union] for l in tmp]
+    topics = [convert_topic(t, union, corr) for t in tmp]
     topics = functools.reduce(operator.iconcat, topics, [])
     hist = {topic: 0 for topic in union}
     for topic in topics:
@@ -178,16 +178,19 @@ def sampling_corpus(corpus, percent=0.2):
         sample = sample + random.choices(cor, k=num)
     return sample
 
-def run(office, sector, start_year, end_year):
+def run(office, sector, same_companies, start_year=2010,
+        end_year=2019, use_perplexity=False):
     """ Analyze topics for the office and sector.
-
     """
-    # Get the training documents from 1 year:
-    corpus = query_intersection(2010, 2019, office, sector, False)
+    # Get the corpus:
+    if same_companies:
+        corpus = query_intersection(2010, 2019, office, sector, False)
+    else:
+        corpus = query_docs(2010, 2019, office, sector, False)
     # Sampling documents in each year for training:
     docs = sampling_corpus(corpus, percent=1/(end_year - start_year))
     # Covert documents to tokens, bag of word and dictionary format:
-    texts, bows, dic, bigrams = tokens_bows_dict(docs, 2, 0.5, 2, 80, True)
+    texts, bows, dic, bigrams = tokens_bows_dict(docs, 5, 0.5, 5, 100, True)
     # Build models for comparison:
     start = max(len(docs) - 70, 10)
     end = len(docs) + 1
@@ -197,10 +200,13 @@ def run(office, sector, start_year, end_year):
             topic_start=start, topic_end=end, step=step, \
             chunk=20, passes=3)
     # Choose a good model:
-    per = [-p for p in perplexities]
-    per = [(p - min(per))/(max(per) - min(per)) for p in per]
-    which = [per[i]*coherences[i] for i in range(len(per))]
-    which = np.argmax(which)
+    if use_perplexity:
+        per = [-p for p in perplexities]
+        per = [(p - min(per))/(max(per) - min(per)) for p in per]
+        score = [per[i]*coherences[i] for i in range(len(per))]
+        which = np.argmax(score)
+    else:
+        which = np.argmax(coherences)
     chosen = models[which]
     # Get texts and bows for each year:
     bows_vs_years = get_texts_bows_vs_years(corpus, dic, bigrams)
@@ -212,11 +218,15 @@ def run(office, sector, start_year, end_year):
     # Get top topics based on coherence and correlation:
     union = topic_union(top_topics, topic_list, mdiff, 10)
     # Get the count for each topic in each year:
-    hists = topic_hist_years(bows_vs_years, chosen, 0.01, union, mdiff)
+    hists = topic_hist_years(bows_vs_years, chosen, 0.05, union, mdiff)
     # Get DataFrame:
     data = [[p[1] for p in hist] for hist in hists]
     pre = [' | '.join(re.findall(r'[a-z_]+', topic_list[i][1])) \
             for i in union]
     df = pd.DataFrame(data, columns=pre, index=range(2010, 2019))
     # Save the model:
-    df.to_csv(os.getcwd()[:-14] + '/web/source/topicm'+"_"+office+"_"+sector+".csv")
+    df.to_csv(os.getcwd()[:-14] + '/web/source/' + office + '_' + sector + '.csv')
+
+
+
+
