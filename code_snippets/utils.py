@@ -108,8 +108,8 @@ def query_intersection(start_year, end_year, office, sector,
     docs = []
     # Find intersection of companies over years:
     for year in range(start_year, end_year):
-        path = "industries" + os.sep + str(year) + os.sep  \
-             + "Office of " + office + os.sep + sector
+        path = "industries" + os.sep + str(year) + os.sep \
+               + office + os.sep + sector
         docs.append(os.listdir(path))
     companies = reduce(lambda x, y: set(x).intersection(set(y)), docs)
 
@@ -119,7 +119,7 @@ def query_intersection(start_year, end_year, office, sector,
     for year in range(start_year, end_year):
         dump = []
         path = "industries" + os.sep + str(year) + os.sep  \
-             + "Office of " + office + os.sep + sector
+               + office + os.sep + sector
         # Open the report:
         for company in companies:
             try:
@@ -136,7 +136,7 @@ def query_intersection(start_year, end_year, office, sector,
     return docs
 
 def query_docs(start_year, end_year, office, sector,
-        combine, companies=['']):
+        combine):
     """ Query documents from folder 'industries'.
         --------------------
         Parameter:
@@ -159,10 +159,9 @@ def query_docs(start_year, end_year, office, sector,
     # Open the docs in loop:
     for year in years:
         dump = []
-        if companies[0] == '':
-            path = "industries" + os.sep + str(year) + os.sep  \
-                 + "Office of " + office + os.sep + sector
-            companies = os.listdir(path)
+        path = "industries" + os.sep + str(year) + os.sep  \
+               + office + os.sep + sector
+        companies = os.listdir(path)
         # Open the report:
         for company in companies:
             try:
