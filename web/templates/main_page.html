@@ -138,11 +138,26 @@
 			const charts = [];
 			for (var i = 0; i < my_st.length; ++i) {
 			  charts[i] = Highcharts.chart('wordcloud' + (i + 1), {
+			    plotOptions: {
+			        series: {
+			            cursor: 'pointer',
+			            allowPointSelect: true,
+			            point: {
+			                events: {
+			                    click: function() {
+	                            	window.open('//www.google.com/search?q='+this.name,'_blank');
+	                            }
+			                }
+			            },
+			        }
+			    },
+
 			    series: [{
 			        type: 'wordcloud',
 			        data: my_st[i],
 			        name: 'Occurrences'
 			    }],
+
 			    title: {
 			        text: 'Topic ' + (i+1)
 			    }
