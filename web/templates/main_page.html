@@ -24,16 +24,6 @@
 			  border: 1px solid #ddd;
 			  margin-bottom: 12px;
 			}
-
-			.carousel-control {
-			    width: 0px !important;
-			}
-			.controls {
-			    background-color: #7070db;
-			    padding: 5px;
-			    border-radius: 15px;
-			    font-size: 18px !important;
-			}
 		</style>
 	</head>
 	<body>
@@ -56,11 +46,11 @@
 	<div class="container-fluid">
 		<!--Graphs have to be here-->
 		<!-- k is passed from python app -->
-		<div class="row">
+<!-- 		<div class="row">
 			<form action="/" method="post">
 				<input name="keyword" type="text" id="myInput" placeholder="Search for words...">
 				<input type="submit" hidden>
-			</form>
+			</form> -->
 		</div>
 		<div class="row">
 			<div class="col align-self-center">
@@ -117,42 +107,24 @@
 			}); </script>
 			</div>
 		</div>
-		<div class="row">
-			<div class="col align-self-center">
-			<div id="wordcloud_chart" data="{{words}}"></div>
-			<div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel" data-interval="false">
-				  <ol class="carousel-indicators">
-				    <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
-				    <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
-				    <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
-				  </ol>
-				  <div class="carousel-inner">
-				    <div class="carousel-item active">
-				      <div id="wordcloud1"></div>
-				    </div>
-				    <div class="carousel-item">
-				      <div id="wordcloud2"></div>
-				    </div>
-				    <div class="carousel-item">
-				      <div id="wordcloud3"></div>
-				    </div>
-				  </div>
-				  <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
-<!-- 				    <span class="carousel-control-prev-icon" aria-hidden="true"></span> -->
-				     <span class="controls glyphicon glyphicon-chevron-left"></span>
-				    <span class="sr-only">Previous</span>
-				  </a>
-				  <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
-<!-- 				    <span class="carousel-control-next-icon" aria-hidden="true"></span> -->
-				    <span class="controls glyphicon glyphicon-chevron-right"></span>
-				    <span class="sr-only">Next</span>
-				  </a>
-			</div>
+		<div class="row" id="wordcloud_chart" data="{{words}}">
+
 			<script type="text/javascript">
-			var elem = document.getElementById('wordcloud_chart').attributes[1].value;
+			var elem = document.getElementById('wordcloud_chart').attributes[2].value;
 			var my_st = JSON.parse(elem);
+
+			var toAdd = document.createDocumentFragment();
+			for(var i=0; i < my_st.length; i++){
+			   var newDiv = document.createElement('div');
+			   newDiv.className = 'col-'+(12/my_st.length);
+			   newDiv.id = 'wordcloud'+(i+1);
+			   toAdd.appendChild(newDiv);
+			}
+
+			document.getElementById('wordcloud_chart').appendChild(toAdd);
+
 			const charts = [];
-			for (var i = 0; i < 3; ++i) {
+			for (var i = 0; i < my_st.length; ++i) {
 			  charts[i] = Highcharts.chart('wordcloud' + (i + 1), {
 			    series: [{
 			        type: 'wordcloud',
@@ -168,8 +140,7 @@
 			document.querySelectorAll('.carousel-control').forEach(button => {
 			  button.onclick = () => charts.forEach((chart) => setTimeout(() => chart.reflow(), 0));
 			});
-		</script>
-	</div>
+			</script>
 		</div>
 	</div>
 	</body>

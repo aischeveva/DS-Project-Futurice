@@ -22,6 +22,7 @@ def start_page():
         if word in DATA.columns:
             data = DATA[word]
             data = data.to_frame()
+    data.columns = range(1, len(data.columns)+1)
     # render template with passing data as parameter
     return render_template('main_page.html', k=data.to_csv(), words=json.dumps(TOPICS))
 
