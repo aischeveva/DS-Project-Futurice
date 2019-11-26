@@ -9,42 +9,61 @@ from gensim.models import LdaMulticore
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.models.phrases import Phrases, Phraser
 
-def get_texts_bows_vs_years(corpus, dic, bigrams):
-    bow_res = []
+def get_all_bows(corpus, dic, bigram=None):
+    """ Get BoW format for all documents in the given 'corpus'.
+        --------------------
+        Parameter:
+            corpus: all raw text documents
+            dic: trained Dictionary
+            bigram: gensim.Phraser
+
+        Return:
+            list of BoW-formatted documents
+    """
+    all_bows = []
     for year in corpus:
         bows = []
         for doc in year:
             # Get tokens from documents:
-            text = bigrams[simple_preprocess(doc)]
+            text = simple_preprocess(doc)
+            if bigram:
+                text = bigram[text]
             # Convert tokens to BoW format:
             bow = dic.doc2bow(text)
             bows.append(bow)
-        # Merge BoWs of 1 year into 1 big BoW:
-        # result.append(merge_bows(bows, dic))
-        bow_res.append(bows)
-    return bow_res
+        # Merge BoWs of 1 year into 1 list of BoW:
+        all_bows.append(bows)
+    return all_bows
 
-def tokens_bows_dict(docs, no_below, no_above, min_count, threshold,
-        bigrams=True):
-    """ Get the bag-of-word form and dictionary from the document corpus.
+def texts_bows_dict(docs, no_below, no_above, min_count, threshold,
+        bigram=True):
+    """ Tokenize every documents and get their BoW format.
+        Return also
         --------------------
         Parameter:
             docs: document corpus
             no_below: filter words that appear in less than
-                      'no_below' number of document.
+                      'no_below' number of document
             no_above: filter words that appear in more than
                       'no_above' percent of document.
-
+            min_count : filter words that appear in less than
+                      'min_count' times in a document
+            threshold: filter words that appear in more than
+                      'threshold' times in a document
+            bigram: if True, then include bigram in the model
         Return:
-            (bow corpus, dictionary)
+            (texts (list of list of tokens),
+            bows (list of BoW-formatted documents),
+            dictionary,
+            bigram)
     """
     # Tokenize documents:
     texts = [simple_preprocess(doc) for doc in docs]
 
-    if bigrams:
+    if bigram:
         tmp = Phrases(texts, min_count=min_count, threshold=threshold)
-        bigrams = Phraser(tmp)
-        texts = [bigrams[doc] for doc in texts]
+        bigram = Phraser(tmp)
+        texts = [bigram[doc] for doc in texts]
 
     # Create a dictionary from 'docs' containing
     # the number of times a word appears in the training set:
@@ -58,36 +77,20 @@ def tokens_bows_dict(docs, no_below, no_above, min_count, threshold,
     # words and how many times those words appear:
     bows = [dictionary.doc2bow(text) for text in texts]
 
-    return texts, bows, dictionary, bigrams
-
-def train_test_split(texts, bows, test_size=0.2):
-    """ Split corpus into train and test set.
-        --------------------
-        Parameter:
-            texts (list of list of string): tokenized documents
-            bows: list of documents in 'Bag of Words' format
-            test_size: percentage of test documents
-
-        Return:
-            texts_train, texts_test, bows_train, bows_test
-    """
-    split = int(len(texts) * (1 - test_size))
-    texts_shuf, bows_shuf = shuffle(texts, bows)
-    texts_train, texts_test = texts_shuf[:split], texts_shuf[split:]
-    bows_train, bows_test = bows_shuf[:split], bows_shuf[split:]
-    return texts_train, texts_test, bows_train, bows_test
+    return texts, bows, dictionary, bigram
 
 def models_codherence_perplexity(texts, bows, dic,
-        topic_start=10, topic_end=201, step=10,
+        topic_start=100, topic_end=201, step=10,
         chunk=10, passes=3, cores=2):
     """ Build models on a range of number of topics to compare quality.
         The output is 3 lists of:
             1. List of built models
-            2. List of coherence scores calculated on training data
-            3. List of perplexity scores calculated on test data
+            2. List of coherence scores calculated on texts
+            3. List of perplexity scores calculated on bows
         --------------------
         Parameter:
-            texts_train, texts_test, bows_train, bows_test
+            texts: list of list of tokens
+            bows: list of list of BoWs
             dic: dictionary of id <-> word
             topic_start, topic_end, step: range of number of topics
             chunk: number of data used in each training step
@@ -115,20 +118,20 @@ def models_codherence_perplexity(texts, bows, dic,
         perplexity_scores.append(model.log_perplexity(bows))
     return models, coherence_scores, perplexity_scores
 
-def word_histogram(bows, model, dic):
-    topics = [[topic[0] for topic in model[bow]] for bow in bows]
-    topics = functools.reduce(operator.iconcat, topics, [])
-    topic_map = dict(model.show_topics(model.num_topics))
-    topic_map = {k: re.findall(r'[a-z]+', v) for (k, v) in topic_map.items()}
-    words = [topic_map[topic] for topic in topics]
-    words = functools.reduce(operator.iconcat, words, [])
-    return [(dic[p[0]], p[1]) for p in dic.doc2bow(words)]
-
 def topic_union(top_topics, topic_list, corr, num):
     """ Get a collection of preference topics.
-        Preference topics is consist of top topics w.r.t
-        coherence score, union with top topics that are least
-        correlated with other topics.
+        Preference topics is a union of top topics w.r.t
+        coherence score top topics w.r.t independence (least
+        correlated with other topics).
+        --------------------
+        Parameter:
+            top_topics: top topics w.r.t cohenrence score
+            topic_list: list of all topics in the LDA model
+            corr: correlation matrix of all topics in LDA model
+            num: number of candidate topics from 2 sources
+
+        Return:
+            list of topic ID
     """
     # Get the topic map:
     topic_map = dict(topic_list)
@@ -145,33 +148,79 @@ def topic_union(top_topics, topic_list, corr, num):
     top_coherence = [[q[1] for q in p[0]] for p in top_topics[:num]]
     top_coherence = [''.join(presentation) for presentation in top_coherence]
     top_coherence = [topic_map[pre] for pre in top_coherence]
+    # Return union of top coherence and top independence topics:
     return sorted(list(set(top_independence).union(set(top_coherence))))
 
 def convert_topic(topics, union, corr):
+    """ Convert topics toward union of top topics based on correlation score.
+        That is, if a predicted topic in 'topics' is not a member of union,
+        then replace this topic by one of the member of union most correlated
+        to it.
+        --------------------
+        Parameter:
+            topics: list of topic ID
+            union: list of topic ID (top topics)
+            corr: correlation matrix of all topics in LDA model
+
+        Return:
+            list of topic ID
+    """
     for i in range(len(topics)):
         if topics[i] not in union:
             corr_score = corr[topics[i]][union]
             topics[i] = union[np.argmin(corr_score)]
     return topics
 
-def topic_histogram(bows, model, min_prob, union, corr):
-    tmp = [model.get_document_topics(bow, minimum_probability=min_prob)
-            for bow in bows]
-    tmp = [[p[0] for p in l if p[0] in union] for l in tmp]
-    topics = [convert_topic(t, union, corr) for t in tmp]
-    topics = functools.reduce(operator.iconcat, topics, [])
-    hist = {topic: 0 for topic in union}
-    for topic in topics:
-        hist[topic] += 1
-    hist = list(hist.items())
-    hist.sort()
-    return hist
+def topic_count_years(corpus, model, min_prob, union, corr):
+    """ Count the occurrence of predicted topics for the given documents.
+        That is,
+            1. use 'model' to predict most probable topics for every documents
+               in 'bows'
+            2. convert any topic that is not a member of 'union'
+            3. count the occurrence of every topics in the whole 'bows'
+        --------------------
+        Parameter:
+            corpus: list of list of BoW-formatted documents
+            model: LDA model
+            min_prob: minimum probability for slecting predicted topics
+            union: list of topic ID (top topics)
+            corr: correlation matrix of all topics in LDA model
 
-def topic_hist_years(corpus, model, min_prob, union, corr):
-    return [topic_histogram(bows, model, min_prob, union, corr)
-            for bows in corpus]
+        Return:
+            list of list of (topic ID, count)
+    """
+    counts = []
+    for bows in corpus:
+        # Predict some most probable topics for documents:
+        predicted_topics = [model.get_document_topics(bow,
+            minimum_probability=min_prob) for bow in bows]
+        # Get only the topic ID:
+        predicted_topics = [[p[0] for p in l if p[0] in union]
+                for l in predicted_topics]
+        # Convert topics that is not in 'union':
+        topics = [convert_topic(t, union, corr) for t in tmp]
+        # Concatenate all predicted topics into 1 list:
+        topics = functools.reduce(operator.iconcat, topics, [])
+        # Count each topic:
+        count = {topic: 0 for topic in union}
+        for topic in topics:
+            count[topic] += 1
+        count = list(count.items())
+        count.sort()
+        # Append the topic count of each year to final result:
+        counts.append(count)
+    return counts
 
 def sampling_corpus(corpus, percent=0.2):
+    """ Sample a subset of documents from each year in the 'corpus'.
+        --------------------
+        Parameter:
+            corpus: list of list of BoW-formatted documents
+            percent: sampling percentage
+
+        Return:
+            list of documents
+    """
     sample = []
     num = int(len(corpus[0])*percent)
     for cor in corpus:
@@ -180,7 +229,20 @@ def sampling_corpus(corpus, percent=0.2):
 
 def run(office, sector, same_companies, start_year=2010,
         end_year=2019, use_perplexity=False):
-    """ Analyze topics for the office and sector.
+    """ Analyze topics for the 'office' and 'sector'.
+        --------------------
+        Parameter:
+            office: list of list of BoW-formatted documents
+            sector: sampling percentage
+            same_companies: if True, then only analyze companies that
+                    present in every years
+            start_year: starting year of interest
+            end_year: ending year of interest
+            use_perplexity: if True, then also use perplexity score
+                    in choosing trained models
+
+        Return:
+            None
     """
     # Get the corpus:
     if same_companies:
@@ -190,7 +252,7 @@ def run(office, sector, same_companies, start_year=2010,
     # Sampling documents in each year for training:
     docs = sampling_corpus(corpus, percent=1/(end_year - start_year))
     # Covert documents to tokens, bag of word and dictionary format:
-    texts, bows, dic, bigrams = tokens_bows_dict(docs, 5, 0.5, 5, 100, True)
+    texts, bows, dic, bigram = texts_bows_dict(docs, 5, 0.5, 5, 100, True)
     # Build models for comparison:
     start = max(len(docs) - 70, 10)
     end = len(docs) + 1
@@ -209,7 +271,7 @@ def run(office, sector, same_companies, start_year=2010,
         which = np.argmax(coherences)
     chosen = models[which]
     # Get texts and bows for each year:
-    bows_vs_years = get_texts_bows_vs_years(corpus, dic, bigrams)
+    bows_vs_years = get_all_bows(corpus, dic, bigram)
     # Prepare to get topic union:
     topic_list = chosen.show_topics(chosen.num_topics, 10)
     top_topics = chosen.top_topics(texts=texts, coherence='c_v', topn=10)
@@ -218,9 +280,9 @@ def run(office, sector, same_companies, start_year=2010,
     # Get top topics based on coherence and correlation:
     union = topic_union(top_topics, topic_list, mdiff, 10)
     # Get the count for each topic in each year:
-    hists = topic_hist_years(bows_vs_years, chosen, 0.05, union, mdiff)
+    counts = topic_count_years(bows_vs_years, chosen, 0.05, union, mdiff)
     # Get DataFrame:
-    data = [[p[1] for p in hist] for hist in hists]
+    data = [[p[1] for p in count] for count in counts]
     pre = [' | '.join(re.findall(r'[a-z_]+', topic_list[i][1])) \
             for i in union]
     df = pd.DataFrame(data, columns=pre, index=range(2010, 2019))
