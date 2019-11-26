@@ -1,10 +1,10 @@
-,aircraft | airlin | passeng | flight | airport | alaska | fare | ticket | pilot | other,seri_prefer | southern | hong_kong | china | wood | warehous | australia | inland | wareh | provision,southwest | airtran | aircraft | airlin | other | flight | boe | southwest_airtran | fare | airport,pipelin | crude | unithold | sunoco | refineri | throughput | barrel | ferc | joint_ventur | ebitda,founder | underwrit | howev | from | other | privat_placement | such | issuabl_exercis | creditor | transfere,airway | aircraft | airlin | skywest | expressjet | passeng | delta | flight | airport | airbu,continent | aircraft | airlin | passeng | airport | flight | boe | ticket | other | predecessor,fedex | confidenti | suppli_chain | seri_prefer | ebitda | aircraft | minnesota | seller | ocean | airlin,vessel | tanker | flag | crude | joint_ventur | oversea | pool | voyag | lighter | handys,china | go_concern | penni | broker_dealer | chines | toll | doubt | annum | peopl_republ | translat,norfolk_southern | railway | southern | kansa_citi | mexican | coal | studi | concess | surcharg | supplement_indentur,alaska | horizon | mileag | airlin | aircraft | passeng | other | seattl | mainlin | codeshar,truckload | surcharg | independ_contractor | tractor | intermod | motor_carrier | trailer | tractor_trailer | temperatur | fmcsa,vessel | offshor | deepwat | marin | drill | stack | flag | drydock | explor | coastwis,bnsf_railway | locomot | taiwan | surcharg | bnsf | actuari | coal | postretir | pacif | studi,truckload | trailer | tractor | surcharg | salari_wage | cent | bodili_injuri | student | tractor_trailer | fmcsa,social | client | reinsur | home | swap | healthcar | encount | carryforward | summer | arizona,barrel | brunswick | extinguish | dock | twelv_month | ancillari | apprais | georgia | cashless | barg,cruis | brand | guest | passeng | onboard | vacat | swap | ticket | itinerari | sea
-2010,27,12,2,12,3,21,11,7,3,22,7,1,43,5,70,7,6,7,6
-2011,21,12,3,10,4,19,10,6,4,24,7,1,38,5,70,6,5,3,8
-2012,22,8,1,12,2,15,9,7,5,15,8,1,39,9,60,4,3,2,6
-2013,19,3,1,15,14,11,5,4,3,8,7,1,36,3,52,3,3,1,7
-2014,23,4,1,19,11,12,7,5,2,8,7,1,31,3,43,3,3,0,7
-2015,25,5,1,20,13,11,8,2,1,13,6,2,30,4,45,2,1,0,6
-2016,26,6,1,22,7,12,9,5,2,14,6,2,30,6,55,4,2,1,8
-2017,20,7,1,20,3,9,7,6,2,10,5,2,31,5,53,3,3,2,7
-2018,17,9,1,21,2,9,8,6,2,7,5,2,30,3,50,5,3,1,7
+,truckload | surcharg | independ_contractor | tractor | intermod | motor_carrier | trailer | tractor_trailer | temperatur | fmcsa,bnsf_railway | locomot | taiwan | surcharg | bnsf | actuari | coal | postretir | pacif | studi
+2010,43,70
+2011,38,70
+2012,39,60
+2013,36,52
+2014,31,43
+2015,30,45
+2016,30,55
+2017,31,53
+2018,30,50
