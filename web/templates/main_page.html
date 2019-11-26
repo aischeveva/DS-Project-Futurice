@@ -12,7 +12,8 @@
 		<script src="https://code.highcharts.com/modules/exporting.js"></script>
 		<script src="https://code.highcharts.com/modules/export-data.js"></script>
 		<script src="https://code.highcharts.com/modules/data.js"></script>
-		<script src="https://code.highcharts.com/modules/wordcloud.js"></script>
+		<script src="https://code.highcharts.com/modules/wordcloud.js"></script>""
+		<link rel="stylesheet" href="static/style.css">
 		<style>
 			#myInput {
 			  background-image: url('/static/icons8-search-16.png');
@@ -38,6 +39,17 @@
 			<!-- You can add links to more pages here as elements of this list -->
 			<li class="nav-item active">
 				<a class="nav-link" href="/">Main</a>
+			</li>
+			{%for k,v in industries.items()%} 
+				<div class="dropdown">
+					<div  class="nav-link">{{k}}</div>
+					<div class="dropdown-content">
+						{%for i in v%} 
+							<a class="nav-link" href="#">{{i}}</a>
+						{%endfor%}
+					</div>
+				</div>
+			{%endfor%}
 			</li>
 			</ul>
 		</div>
