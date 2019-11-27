@@ -198,7 +198,7 @@ def topic_count_years(corpus, model, min_prob, union, corr):
         predicted_topics = [[p[0] for p in l if p[0] in union]
                 for l in predicted_topics]
         # Convert topics that is not in 'union':
-        topics = [convert_topic(t, union, corr) for t in tmp]
+        topics = [convert_topic(t, union, corr) for t in predicted_topics]
         # Concatenate all predicted topics into 1 list:
         topics = functools.reduce(operator.iconcat, topics, [])
         # Count each topic:
