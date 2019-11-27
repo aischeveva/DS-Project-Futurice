@@ -10,4 +10,4 @@ The data we have available is from the [Edgar database](https://www.sec.gov/edga
 - Explore publicly available textual financial datasets using Machine Learning methods. 
 - Create visualizations to highlight the most important trends in the data.
 
-**Link to the project walkthrough and explanation: https://github.com/aischeveva/DS-Project-Futurice/blob/master/code_snippets/DS%20Project.ipynb
+**Link to the project walkthrough and explanation**: https://github.com/aischeveva/DS-Project-Futurice/blob/master/code_snippets/DS%20Project.ipynb
