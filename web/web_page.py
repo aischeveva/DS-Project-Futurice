@@ -9,30 +9,34 @@ import os
 # create Flask app
 app = Flask(__name__, static_url_path='/static')
 
-# call when main page is loaded
-@app.route('/', methods=['GET', 'POST'])
-def start_page():
-    
+# Prepare names of 'office' and sector:
+files = [name.split('_') for name in os.listdir('source') if name.startswith('Office')]
+dic = {}
+for p in files:
+    office= p[0]
+    sector = p[1]
+    if office in dic:
+        dic[office].append(sector)
+    else:
+        dic[office] = [sector]
 
-    files = [name.split('_') for name in os.listdir('source') if name.startswith('Office')]
-    dic = {}
-    for p in files:
-        office= p[0][10:]
-        sector = p[1][:-4]
-        if office in dic:
-            dic[office].append(sector)
-        else:
-            dic[office] = [sector]
-    
-    data = pd.read_csv('source/Office of Energy & Transportation_Mining.csv', index_col=0)
+@app.route('/')
+def start_page():
+    return render_template('main_page.html', industries=dic)
+
+# call when main page is loaded
+@app.route('/<data>', methods=['GET', 'POST'])
+def dashboard(data):
+    # Load data from 'source':
+    data = pd.read_csv('source/' + data, index_col=0)
     topics = []
     for column in data.columns:
         words = column.split(' | ')
         topics.append([{'name': word, 'weight': len(words) + 5 - i} for i, word in enumerate(words)])
     data.columns = range(1, len(data.columns)+1)
-    # render template with passing data as parameter
-    return render_template('main_page.html', k=data.to_csv(), words=json.dumps(topics), industries=dic)
-
+    # Render template with passing data as parameter:
+    return render_template('dashboard.html', k=data.to_csv(),
+            words=json.dumps(topics), industries=dic)
 
 if __name__ == '__main__':
     # run the app
