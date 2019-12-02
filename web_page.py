@@ -44,6 +44,7 @@ def dashboard(data):
 
 if __name__ == '__main__':
     # run the app
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    # app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.debug = True
-    app.run()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
