@@ -10,24 +10,28 @@ import os
 app = Flask(__name__, static_url_path='/static')
 
 # Prepare names of 'office' and sector:
-files = [name.split('_') for name in os.listdir('source') if name.startswith('Office')]
-dic = {}
-for p in files:
-    office= p[0]
-    sector = p[1]
-    if office in dic:
-        dic[office].append(sector)
-    else:
-        dic[office] = [sector]
+def load_data():
+    files = [name.split('_') for name in os.listdir('source') if name.startswith('Office')]
+    dic = {}
+    for p in files:
+        office= p[0]
+        sector = p[1]
+        if office in dic:
+            dic[office].append(sector)
+        else:
+            dic[office] = [sector]
+    return dic
 
 @app.route('/')
 def start_page():
+    dic = load_data()
     return render_template('main_page.html', industries=dic)
 
 # call when main page is loaded
 @app.route('/<data>', methods=['GET', 'POST'])
 def dashboard(data):
     # Load data from 'source':
+    dic = load_data()
     data = pd.read_csv('source/' + data, index_col=0)
     topics = []
     for column in data.columns:
