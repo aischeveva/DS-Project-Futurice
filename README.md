@@ -1,5 +1,5 @@
 # Data Science Project Futurice 2019
-This project is part of the course CS-C3230 Data Science Project at Aalto University. Collaborated with and mentored by Futurice Oy. 
+This project is the core of the course CS-C3230 Data Science Project at Aalto University. Collaborated with and mentored by Futurice Oy. 
 
 **Project Topic**: Is it possible to extract market trends automatically from the published data?
 For a consulting company like Futurice, it is important to understand emerging business trends and the market situation of client companies. 
